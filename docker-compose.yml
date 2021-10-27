@@ -1,0 +1,91 @@
+version: '3'
+
+services:
+  master:
+    image: mysql:5.7.36
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    environment:
+      - "MYSQL_ROOT_PASSWORD=root"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - $PWD/my.cnf:/etc/mysql/my.cnf
+    ulimits:
+      nproc: 4096
+      nofile:
+        soft: 1024
+        hard: 3072
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "1"
+
+  canal-server:
+    image: canal/canal-server:v1.1.5
+    restart: always
+    ports:
+      - "11110:11110"
+      - "11111:11111"
+      - "11112:11112"
+      - "9100:9100"
+    environment:
+      - "canal.instance.master.address=master:3306"
+      - "canal.instance.dbUsername=root"
+      - "canal.instance.dbPassword=root"
+      - "canal.instance.connectionCharset=UTF-8"
+      - "canal.instance.tsdb.enable=true"
+      - "canal.instance.gtidon=false"
+      - "canal.instance.filter.regex=.*\\..* "
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    ulimits:
+      nproc: 4096
+      nofile:
+        soft: 1024
+        hard: 3072
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "1"
+
+  canal-adapter:
+    image: airiot/canal-adapter:v1.1.5
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - $PWD/conf:/canal-adapter/conf
+    ulimits:
+      nproc: 4096
+      nofile:
+        soft: 1024
+        hard: 3072
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "1"
+
+  slave:
+    image: mysql:5.7.36
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    environment:
+      - "MYSQL_ROOT_PASSWORD=root"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    ulimits:
+      nproc: 4096
+      nofile:
+        soft: 1024
+        hard: 3072
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "1"
